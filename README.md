@@ -40,7 +40,7 @@ Please download dataset from this link: (**THE LINK WILL BE UPLOADED LATER)**
 To evaluate the robustness of SAM variants, this project implements a rigorous noise injection pipeline via the `NoiseInjection` class. Each corruption can be applied with varying levels of **Severity (1-5)**, simulating real-world environmental challenges and digital artifacts.
 
 <p align="center">
-  <img src="C:\Users\ADMIN\Documents\SAM\Research\output.png" width="600"/>
+  <img src="./example_image/output.png" width="600"/>
 </p>
 
 ### 1. Statistical Noise
