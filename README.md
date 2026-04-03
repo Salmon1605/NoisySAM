@@ -19,7 +19,7 @@
 - VOC Pascal 2012 (validation)
 - ADE20K (validation)
 
-Please download dataset from this link: (**THE LINK WILL BE UPLOADED LATER)**
+Please download dataset from this link: [DATASET](https://drive.google.com/drive/folders/13F7XKDBIV-9y4c2LejBK3bt5Upr1HcZs?usp=sharing)
 
 ### DATA FORMAT
 
