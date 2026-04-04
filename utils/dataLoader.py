@@ -15,6 +15,7 @@ import numpy as np
 import torch.nn as nn 
 import torchvision 
 import fiftyone as fo
+import scipy.io as scio
 import fiftyone.zoo as foz 
 import fiftyone.types as fot
 import xml.etree.ElementTree as ET
@@ -286,6 +287,85 @@ class ADE20KLoader(Dataset):
             'canvas_height' : canvas_height,
             'canvas_width'  : canvas_width,
             'labels'        : labels,
+            'bounding_boxes': bounding_boxes,
+            'masks'         : masks
+        }
+    
+
+class BSDS500(Dataset): 
+    def __init__(self, image_subdir: str, annotations_subdir: str, root: str, split: str, min_area: int = 100):
+        super().__init__()
+        assert split in ('train', 'val', 'test') 
+        
+        self.root = root
+        self.split = split 
+        self.image_subdir = image_subdir 
+        self.annotations_subdir = annotations_subdir  
+        self.min_area = 100 
+
+        self.image_dir = os.path.join(self.root, self.image_subdir, self.split) 
+        self.annotations_dir = os.path.join(self.root, self.annotations_subdir, self.split) 
+
+        if not os.path.exists(self.image_dir): 
+            raise FileNotFoundError(f"{self.image_dir} does not exist") 
+        
+        if not os.path.exists(self.annotations_dir): 
+            raise FileNotFoundError(f"{self.annotations_dir} does not exist")  
+        
+        self.image_files = sorted([
+            f for f in os.listdir(self.image_dir) if f.endswith(".jpg") 
+        ])
+        
+        self.ann_files = sorted([
+            f for f in os.listdir(self.annotations_dir) if f.endswith(".mat") 
+        ])
+
+    def __len__(self):
+        return len(self.image_files) 
+    
+    def _get_bbox_from_mask(self, mask:np.array): 
+        ys, xs = np.where(mask > 0) 
+        if len(xs) == 0 or len(ys) == 0:
+            return None 
+        x_min = xs.min() 
+        x_max = xs.max() 
+        y_min = ys.min() 
+        y_max = ys.max() 
+
+        return np.array([x_min, y_min, x_max, y_max])
+
+    def __getitem__(self, index):
+        image_id = self.image_files[index] 
+        ann_id = self.ann_files[index] 
+
+        image_fp = os.path.join(self.image_dir, image_id)
+        ann_fp = os.path.join(self.annotations_dir, ann_id) 
+
+        image = np.array(Image.open(image_fp).convert("RGB")) 
+        annotations = scio.loadmat(ann_fp) 
+
+        img_id = image_id.split('.')[0] 
+        canvas_height = image.shape[0] 
+        canvas_width = image.shape[1] 
+
+        segs = annotations['groundTruth'][0, 0]['Segmentation'][0, 0]
+        unique_objs = np.unique(segs)
+        masks = []
+        bounding_boxes = []
+        for label in unique_objs:
+            mask = (segs == label).astype(np.uint8)
+            if mask.sum() < self.min_area: 
+                continue
+            bbox = self._get_bbox_from_mask(mask) 
+            bounding_boxes.append(bbox) 
+            masks.append(mask) 
+
+        return {
+            'image_id'      : image_id,
+            'image'         : image,
+            'canvas_height' : canvas_height,
+            'canvas_width'  : canvas_width,
+            'labels'        : None,
             'bounding_boxes': bounding_boxes,
             'masks'         : masks
         }

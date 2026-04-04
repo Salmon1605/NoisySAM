@@ -40,13 +40,11 @@ class NoiseHelpers:
         aliased_disk = np.array((X ** 2 + Y ** 2) <= radius ** 2, dtype=dtype)
         aliased_disk /= np.sum(aliased_disk)
 
-        # supersample disk to antialias
         return cv2.GaussianBlur(aliased_disk, ksize=ksize, sigmaX=alias_blur)
 
     def clipped_zoom(img, zoom_factor):
         h, w = img.shape[:2]
 
-        # crop size theo từng chiều
         ch = int(np.ceil(h / zoom_factor))
         cw = int(np.ceil(w / zoom_factor))
 
@@ -59,7 +57,6 @@ class NoiseHelpers:
             order=1
         )
 
-        # trim về lại size gốc
         trim_top = (img.shape[0] - h) // 2
         trim_left = (img.shape[1] - w) // 2
 
