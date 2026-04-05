@@ -142,16 +142,24 @@ class NoiseInjection:
             np.array: Gaussian Noise injected Image.
         """
         temp_image = image
-        Gaussian_transform = None
-        if severity == 1: 
-            Gaussian_transform = A.GaussNoise(std_range=(0.00, 0.04), p=1) 
-        elif severity == 2:     
-            Gaussian_transform = A.GaussNoise(std_range=(0.04, 0.12), p=1)
-        elif severity == 3:     
-            Gaussian_transform = A.GaussNoise(std_range=(0.12, 0.25), p=1) 
 
-        transformed_image = Gaussian_transform(image=temp_image)['image']
+        if severity == 1:
+            std_range = (0.00, 0.02)
+        elif severity == 2:
+            std_range = (0.02, 0.05)
+        elif severity == 3:
+            std_range = (0.05, 0.10)
+        elif severity == 4:
+            std_range = (0.10, 0.18)
+        elif severity == 5:
+            std_range = (0.18, 0.30)
+        else:
+            raise ValueError("severity must be in [1, 5]")
+
+        transform = A.GaussNoise(std_range=std_range, p=1)
+        transformed_image = transform(image=temp_image)['image']
         return transformed_image
+        
     
     def _inject_poisson_noise(self, image, severity:int=1): 
         """
@@ -164,17 +172,22 @@ class NoiseInjection:
         Returns: 
             np.array: Poisson Noise injected Image.
         """
-        temp_image = image 
-        Poisson_transform = None 
-        if severity == 1: 
-            Poisson_transform = A.ShotNoise(scale_range=(0.01, 0.02), p=1) 
-        elif severity == 2: 
-            Poisson_transform = A.ShotNoise(scale_range=(0.05, 0.1), p = 1)
-        elif severity == 3 : 
-            Poisson_transform = A.ShotNoise(scale_range=(0.15, 0.25), p = 1)
+        temp_image = image
+        if severity == 1:
+            scale_range = (0.005, 0.02)
+        elif severity == 2:
+            scale_range = (0.02, 0.05)
+        elif severity == 3:
+            scale_range = (0.05, 0.10)
+        elif severity == 4:
+            scale_range = (0.10, 0.18)
+        elif severity == 5:
+            scale_range = (0.18, 0.30)
+        else:
+            raise ValueError("severity must be in [1, 5]")
 
-        transformed_image = Poisson_transform(image=temp_image)['image']
-        return transformed_image
+        transform = A.ShotNoise(scale_range=scale_range, p=1)
+        return transform(image=temp_image)['image']
      
     def _inject_salt_and_pepper_noise(self, image, severity:int=1): 
         """
@@ -191,11 +204,15 @@ class NoiseInjection:
         temp_image = image 
         salt_and_pepper_transform = None 
         if severity == 1: 
-            salt_and_pepper_transform = A.SaltAndPepper(amount=(0.01, 0.03), p=1)
+            salt_and_pepper_transform = A.SaltAndPepper(amount=(0.01, 0.05), p=1)
         elif severity == 2: 
-            salt_and_pepper_transform = A.SaltAndPepper(amount=(0.05, 0.15), p=1)
+            salt_and_pepper_transform = A.SaltAndPepper(amount=(0.06, 0.10), p=1)
         elif severity == 3: 
-            salt_and_pepper_transform = A.SaltAndPepper(amount=(0.2, 0.5), p=1)
+            salt_and_pepper_transform = A.SaltAndPepper(amount=(0.11, 0.15), p=1)
+        elif severity == 4: 
+            salt_and_pepper_transform = A.SaltAndPepper(amount=(0.15, 0.25), p=1)
+        elif severity == 5: 
+            salt_and_pepper_transform = A.SaltAndPepper(amount=(0.26, 0.35), p=1)
         
         transformed_image = salt_and_pepper_transform(image=temp_image)['image']
         return transformed_image

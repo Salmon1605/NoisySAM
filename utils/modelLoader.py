@@ -57,7 +57,12 @@ class SAM1(AbstractLoader):
             multimask_output=False 
         )
         pred_mask = masks[0]
-        return pred_mask, scores
+        return {
+            "mask": pred_mask,
+            "score": scores,
+            "status": "ok",
+            "reason": None
+        }
 
 class MobileSAM(AbstractLoader): 
     def __init__(self, model_name:str=None, model_type:str=None, checkpoint:str=None):
@@ -84,7 +89,12 @@ class MobileSAM(AbstractLoader):
             multimask_output=False 
         )
         pred_mask = masks[0]
-        return pred_mask, scores
+        return {
+            "mask": pred_mask,
+            "score": scores,
+            "status": "ok",
+            "reason": None
+        }
 
 
 class FastSAMModel(AbstractLoader): 
@@ -116,9 +126,38 @@ class FastSAMModel(AbstractLoader):
         
     def _predict(self, bounding_box:np.array): 
         input_bbox = np.array(bounding_box) if bounding_box is not np.array else bounding_box 
-        result = self.predictor.prompt(results=self.everything_results, bboxes=input_bbox)[0] 
-        pred_mask = result.masks.data.numpy() 
-        return pred_mask, None
+        # result = self.predictor.prompt(results=self.everything_results, bboxes=input_bbox)[0] 
+       
+
+        # pred_mask = result.masks.data.cpu().numpy() 
+        # scores = result.boxes.conf.cpu().numpy()
+        # return pred_mask[0], scores
+
+        try: 
+            result = self.predictor.prompt(results=self.everything_results, bboxes=input_bbox)[0] 
+            if result.masks is None:
+                return {
+                    "mask": None,
+                    "score": None,
+                    "status": "fail",
+                    "reason": "no_mask"
+                }
+            pred_mask = result.masks.data.cpu().numpy()[0]
+            scores = result.boxes.conf.cpu().numpy()
+            return {
+                "mask": pred_mask,
+                "score": scores,
+                "status": "ok",
+                "reason": None
+             }
+
+        except Exception as e:
+            return {
+                "mask": None,
+                "score": None,
+                "status": "fail",
+                "reason": str(e)
+            }
 
 
 

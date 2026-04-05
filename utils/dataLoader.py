@@ -292,8 +292,8 @@ class ADE20KLoader(Dataset):
         }
     
 
-class BSDS500(Dataset): 
-    def __init__(self, image_subdir: str, annotations_subdir: str, root: str, split: str, min_area: int = 100):
+class BSDS500Loader(Dataset): 
+    def __init__(self, image_subdir: str, annotations_subdir: str, root: str, split: str, min_area: int = 500):
         super().__init__()
         assert split in ('train', 'val', 'test') 
         
@@ -301,7 +301,7 @@ class BSDS500(Dataset):
         self.split = split 
         self.image_subdir = image_subdir 
         self.annotations_subdir = annotations_subdir  
-        self.min_area = 100 
+        self.min_area = min_area 
 
         self.image_dir = os.path.join(self.root, self.image_subdir, self.split) 
         self.annotations_dir = os.path.join(self.root, self.annotations_subdir, self.split) 
@@ -319,6 +319,8 @@ class BSDS500(Dataset):
         self.ann_files = sorted([
             f for f in os.listdir(self.annotations_dir) if f.endswith(".mat") 
         ])
+
+        logging.info(f"BSDS500Loader | split={self.split} | images found={len(self.image_files)}")
 
     def __len__(self):
         return len(self.image_files) 
@@ -359,13 +361,13 @@ class BSDS500(Dataset):
             bbox = self._get_bbox_from_mask(mask) 
             bounding_boxes.append(bbox) 
             masks.append(mask) 
-
+        labels = np.ones(len(masks), dtype=np.int64)
         return {
             'image_id'      : image_id,
             'image'         : image,
             'canvas_height' : canvas_height,
             'canvas_width'  : canvas_width,
-            'labels'        : None,
+            'labels'        : labels,
             'bounding_boxes': bounding_boxes,
             'masks'         : masks
         }
