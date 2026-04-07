@@ -5,6 +5,7 @@ import glob
 import tqdm
 import json
 import logging
+import csv
 
 import numpy as np 
 import matplotlib as plt 
@@ -41,6 +42,8 @@ class Experiment:
             'mean_IoU': None, 
             'mean_DICE': None, 
             'mean_HD95': None,
+            'mean_precision': None, 
+            'mean_recall': None
         }
         failure_cases = { 
             'corruption':noise_name, 
@@ -51,6 +54,8 @@ class Experiment:
         total_IoU = [] 
         total_DICE = [] 
         total_HD95 = []
+        total_precision = []
+        total_recall = []
 
         for sample in tqdm.tqdm(self.dataset, desc=f"Noise: {noise_name} | severity: {severity} "): 
             image = sample['image']
@@ -59,8 +64,12 @@ class Experiment:
             sample_IoU = []
             sample_Dice = []
             sample_HD95 = []
+            sample_precision = [] 
+            sample_recall = []
             image_result = {
                 'image_id': str(sample['image_id']), 
+                'image': image, 
+                'transformed_image': transformed_image,
                 'annotations': []
             }
 
@@ -77,7 +86,7 @@ class Experiment:
                     failure_cases['images'].append({
                         "image_id": str(sample["image_id"]),
                         "ann_id": int(ann_id),
-                        "bbox": bbox,
+                        "bbox": [float(x) for x in bbox],
                         "category": str(label),
                         "status": str(output['status']),
                         "reason": str(output['reason'])
@@ -87,19 +96,27 @@ class Experiment:
                 iou = metrics._calculate_IoU(gt_mask, pred_mask) 
                 dice = metrics._calculate_Dice(gt_mask, pred_mask) 
                 hd95 = metrics._compute_hausdorff_95(gt_mask, pred_mask)
+                precision, recall = metrics._calculate_precision_recall(gt_mask, pred_mask) 
 
                 sample_IoU.append(iou)
                 sample_Dice.append(dice) 
                 sample_HD95.append(hd95)
+                sample_precision.append(precision)
+                sample_recall.append(recall)
 
                 ann_block = {
                     "ann_id": int(ann_id),
                     "image_id": str(sample["image_id"]),
+                    "bbox": [int(x) for x in input_bbox],
+                    "groundtruth_mask":gt_mask, 
+                    "predicted_mask":pred_mask,
                     "category_name": str(label),
-                    "iou_pred": float(scores[0]),
+                    "confidence": float(scores[0]),
                     "dice": float(dice),
                     "iou": float(iou),
-                    "hd95": float(hd95)
+                    "hd95": float(hd95), 
+                    "recall": float(recall), 
+                    "precision": float(precision)
                 }
 
                 image_result["annotations"].append(ann_block)
@@ -110,10 +127,14 @@ class Experiment:
                 total_IoU.append(np.mean(sample_IoU))
                 total_DICE.append(np.mean(sample_Dice))
                 total_HD95.append(np.mean(sample_HD95))
+                total_precision.append(np.mean(sample_precision))
+                total_recall.append(np.mean(sample_recall))
         
         noise_result['mean_IoU'] = float(np.mean(total_IoU)) if total_IoU else 0.0 
         noise_result['mean_DICE'] = float(np.mean(total_DICE)) if total_DICE else 0.0 
-        noise_result['mean_HD95'] = float(np.mean(total_HD95)) if total_HD95 else 0.0
+        noise_result['mean_HD95'] = float(np.mean(total_HD95)) if total_HD95 else 0.0 
+        noise_result['mean_recall'] = float(np.mean(total_recall)) if total_recall else 0.0 
+        noise_result['mean_precision'] = float(np.mean(total_precision)) if total_precision else 0.0 
 
         return noise_result, failure_cases
 

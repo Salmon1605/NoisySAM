@@ -4,6 +4,7 @@ import re
 import cv2  
 import tqdm 
 import logging
+import csv
 import json
 import glob
 import tqdm
@@ -26,7 +27,10 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-OUTPUT_DIR = r'C:\Users\ADMIN\Documents\SAM\Research\result' 
+OUTPUT_ROOT_DIR = r'C:\Users\ADMIN\Documents\SAM\Research\result'
+OUTPUT_METADATA_DIR = r'C:\Users\ADMIN\Documents\SAM\Research\result\json' 
+OUTPUT_METRICS_DIR = r'C:\Users\ADMIN\Documents\SAM\Research\result\csv'
+
 THRESHOLD = 0.15
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -106,7 +110,7 @@ noise_dict = {
     "jpeg": noise._inject_JPEG
 }
 
-severities = [1, 3, 5]
+severities = [1, 2, 3, 4, 5]
 
 # ====== METRICS ====== 
 metrics = Metrics() 
@@ -115,7 +119,6 @@ metrics = Metrics()
 
 # ====== COCO EVALUATION ======
 coco_models = [ 
-    (sam_b_model, "SAM_b", sam_vit_b_checkpoint),
     (sam_h_model, "SAM_h", sam_vit_h_checkpoint),
     (mobileSAM_model, "MobileSAM", mobileSAM_checkpoint),
     (fastSAM_model, "FastSAM", FastSAM_model)
@@ -132,7 +135,7 @@ for m_obj, m_name, m_ckpt in coco_models:
         "corruption_types": list(noise_dict.keys()),
         "prompt_type": "bbox",
         "metrics": ["dice", "iou", "hd95"],
-        "output_dir": OUTPUT_DIR,
+        "output_dir": OUTPUT_ROOT_DIR,
         "experiment_tag": f"{m_name}_coco"
     }
     
@@ -147,7 +150,6 @@ for m_obj, m_name, m_ckpt in coco_models:
 
 # ====== VOC EVALUATION =======
 voc_models = [
-    (sam_b_model, "SAM_b", sam_vit_b_checkpoint),
     (sam_h_model, "SAM_h", sam_vit_h_checkpoint),
     (mobileSAM_model, "MobileSAM", mobileSAM_checkpoint),
     (fastSAM_model, "FastSAM", FastSAM_model)
@@ -164,7 +166,7 @@ for m_obj, m_name, m_ckpt in voc_models:
         "corruption_types": list(noise_dict.keys()),
         "prompt_type": "bbox",
         "metrics": ["dice", "iou", "hd95"],
-        "output_dir": OUTPUT_DIR,
+        "output_dir": OUTPUT_ROOT_DIR,
         "experiment_tag": f"{m_name}_voc"
     }
     
@@ -180,7 +182,6 @@ for m_obj, m_name, m_ckpt in voc_models:
 # ====== ADE20k EVALUATION =======  
 
 ade_models = [
-    (sam_b_model, "SAM_b", sam_vit_b_checkpoint),
     (sam_h_model, "SAM_h", sam_vit_h_checkpoint),
     (mobileSAM_model, "MobileSAM_t", mobileSAM_checkpoint),
     (fastSAM_model, "FastSAM", FastSAM_model)
@@ -197,7 +198,7 @@ for m_obj, m_name, m_ckpt in ade_models:
         "corruption_types": list(noise_dict.keys()),
         "prompt_type": "bbox",
         "metrics": ["dice", "iou", "hd95"],
-        "output_dir": OUTPUT_DIR,
+        "output_dir": OUTPUT_ROOT_DIR,
         "experiment_tag": f"{m_name}_ade20k"
     }
     
@@ -213,7 +214,6 @@ for m_obj, m_name, m_ckpt in ade_models:
 # ======  EVALUATION BSDS500======= 
 
 bsds_models = [
-    (sam_b_model, "SAM_b", sam_vit_b_checkpoint),
     (sam_h_model, "SAM_h", sam_vit_h_checkpoint),
     (mobileSAM_model, "MobileSAM_t", mobileSAM_checkpoint),
     (fastSAM_model, "FastSAM", FastSAM_model)
@@ -230,7 +230,7 @@ for m_obj, m_name, m_ckpt in bsds_models:
         "corruption_types": list(noise_dict.keys()),
         "prompt_type": "bbox",
         "metrics": ["dice", "iou", "hd95"],
-        "output_dir": OUTPUT_DIR,
+        "output_dir": OUTPUT_ROOT_DIR,
         "experiment_tag": f"{m_name}_bsds500"
     }
 

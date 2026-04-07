@@ -45,12 +45,9 @@ class COCOLoader(Dataset):
         logging.info(f'COCOLoader | images found: {len(self.dataset)}')
 
     def __len__(self):
-        return len(self.dataset) 
-    
-    def __getitem__(self, idx):
-        sample_id = self.sample_ids[idx]
-        sample = self.dataset[sample_id] 
+        return len(self.dataset)
 
+    def _process_sample(self, sample): 
         if sample.metadata is None:
             sample.compute_metadata()
 
@@ -82,14 +79,31 @@ class COCOLoader(Dataset):
             masks.append(overlay_mask) 
 
         return {
-            'image_id':sample_id,
-            'image': image,
-            'canvas_height':canvas_height,
-            'canvas_width':canvas_width, 
-            'labels':labels, 
-            'bounding_boxes':bounding_boxes, 
-            'masks':masks
+            'image_id'         : str(sample.id),
+            'image_path'       : str(sample.filepath),
+            'image'            : image,
+            'canvas_height'    : canvas_height,
+            'canvas_width'     : canvas_width, 
+            'labels'           : labels, 
+            'bounding_boxes'   : bounding_boxes, 
+            'masks'            : masks
         }
+    
+    def __getitem__(self, idx):
+        sample_id = self.sample_ids[idx]
+        logging.info(f"ID: {sample_id}")
+        sample = self.dataset[sample_id] 
+
+        output = self._process_sample(sample) 
+        return output
+    
+    def _get_by_id(self, image_id): 
+        try:
+            sample = self.dataset[image_id]
+            return self._process_sample(sample)
+        except KeyError:
+            logging.error(f"COCOLoader | image_id {image_id} not found in dataset.")
+            return None
     
 
 class VOCPascalLoader(Dataset): 
@@ -159,13 +173,14 @@ class VOCPascalLoader(Dataset):
         masks = [np.array((semantic_image==obj_id)) for obj_id in ids] 
         
         return {
-            'image_id':image_id, 
-            'image':image, 
-            'canvas_height':canvas_height,
-            'canvas_width':canvas_width, 
-            'labels':labels, 
+            'image_id'      :image_id,
+            'image_path'    :str(image_fp),
+            'image'         :image, 
+            'canvas_height' :canvas_height,
+            'canvas_width'  :canvas_width, 
+            'labels'        :labels, 
             'bounding_boxes':bounding_boxes, # (x_min, y_min, x_max_, y_max)
-            'masks':masks
+            'masks'         :masks
         }
 
 
@@ -283,6 +298,7 @@ class ADE20KLoader(Dataset):
 
         return {
             'image_id'      : image_id,
+            'image_path'    : image_path,
             'image'         : image,
             'canvas_height' : canvas_height,
             'canvas_width'  : canvas_width,

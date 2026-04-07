@@ -18,32 +18,45 @@ class Metrics:
     def __init__(self, eps = 1e-6): 
         self.eps = eps 
 
-    def _calculate_IoU(self, groundtruth_mask, predicted_mask): 
-        groundtruth_mask = np.int8(groundtruth_mask) 
-        predicted_mask = np.int8(predicted_mask) 
+    def _ensure_binary(self, mask):
+        return mask.astype(bool)
 
-        intersection = np.logical_and(groundtruth_mask, predicted_mask).sum() 
-        union = np.logical_or(groundtruth_mask, predicted_mask).sum() 
-        IoU = (intersection / (union + self.eps)) * 100
-        return IoU 
+    def _calculate_IoU(self, groundtruth_mask, predicted_mask): 
+        gt = self._ensure_binary(groundtruth_mask)
+        pred = self._ensure_binary(predicted_mask)
+
+        intersection = np.logical_and(gt, pred).sum() 
+        union = np.logical_or(gt, pred).sum() 
+        return (intersection / (union + self.eps)) * 100
     
     def _calculate_Dice(self, groundtruth_mask, predicted_mask): 
-        groundtruth_mask = np.int8(groundtruth_mask) 
-        predicted_mask = np.int8(predicted_mask) 
+        gt = self._ensure_binary(groundtruth_mask)
+        pred = self._ensure_binary(predicted_mask)
 
-        intersection = (np.logical_and(groundtruth_mask, predicted_mask)).sum() 
-        denominator = (groundtruth_mask.sum()) + (predicted_mask.sum()) + self.eps 
-        Dice = (intersection / denominator) * 100 
-        return Dice
+        intersection = np.logical_and(gt, pred).sum() 
+        denominator = gt.sum() + pred.sum() + self.eps 
+        return (2.0 * intersection / denominator) * 100
     
+    def _calculate_precision_recall(self, groundtruth_mask, predicted_mask): 
+        gt = self._ensure_binary(groundtruth_mask)
+        pred = self._ensure_binary(predicted_mask)
+
+        tp = np.logical_and(pred, gt).sum()
+        fp = np.logical_and(pred, ~gt).sum()
+        fn = np.logical_and(~pred, gt).sum()
+
+        precision = tp / (tp + fp + self.eps)
+        recall = tp / (tp + fn + self.eps)
+        return float(precision) * 100, float(recall) * 100
+
     def _boundary_pts(self, mask):
         return np.argwhere(mask ^ ndimage.binary_erosion(mask))
     
     def _compute_hausdorff_95(self, groundtruth_mask:np.ndarray, predicted_mask:np.ndarray) -> float:
-        p, g = predicted_mask.astype(bool), groundtruth_mask.astype(bool)
+        p, g = self._ensure_binary(predicted_mask), self._ensure_binary(groundtruth_mask)
         diag = float(np.sqrt(p.shape[0]**2 + p.shape[1]**2))
-        if p.sum() == 0 and g.sum() == 0: return 0.0
-        if p.sum() == 0 or g.sum() == 0: return diag
+        if not p.any() and not g.any(): return 0.0
+        if not p.any() or not g.any(): return diag
         pp, gp = self._boundary_pts(p), self._boundary_pts(g)
         if len(pp) == 0 or len(gp) == 0: return diag
         tree_g = cKDTree(gp)
@@ -51,5 +64,5 @@ class Metrics:
         d1, _ = tree_g.query(pp)
         d2, _ = tree_p.query(gp)
         return float(np.percentile(np.concatenate([d1, d2]), 95))
-
+    
         

@@ -105,7 +105,7 @@ class FastSAMModel(AbstractLoader):
             task:str='segment',
             conf:float=0.4, 
             mode:str='predict', 
-            imgsz:int=1024, 
+            imgsz:int=512, 
             retina_masks:bool=True):
         super().__init__(model_name)
         self.model_name = model_name 
