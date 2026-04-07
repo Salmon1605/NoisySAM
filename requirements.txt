@@ -1,0 +1,27 @@
+# --- Core Deep Learning & Computer Vision ---
+torch
+torchvision
+numpy
+opencv-python
+Pillow
+scipy
+scikit-image
+matplotlib
+
+# --- Segment Anything Models (SAM) & Variants ---
+segment-anything
+mobile-sam
+ultralytics
+
+# --- Data Handling & Datasets ---
+fiftyone
+pandas
+tqdm
+scipy
+
+# --- Noise & Perturbations ---
+albumentations
+Wand
+
+# --- Utilities ---
+datetime
